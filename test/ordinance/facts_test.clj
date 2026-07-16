@@ -1,0 +1,26 @@
+(ns ordinance.facts-test
+  (:require [clojure.string :as str]
+            [clojure.test :refer [deftest is]]
+            [ordinance.facts :as facts]))
+
+(deftest cairo-has-spec-basis
+  (let [sb (facts/spec-basis "cairo")]
+    (is (= 2 (count sb)))
+    (is (every? #(str/starts-with? (:ordinance/url %) "https://") sb))
+    (is (every? :ordinance/number sb))))
+
+(deftest unknown-municipality-has-no-spec-basis
+  (is (nil? (facts/spec-basis "alexandria")))
+  (is (nil? (facts/spec-basis "zzz"))))
+
+(deftest coverage-is-honest
+  (let [c (facts/coverage ["cairo" "alexandria"])]
+    (is (= 2 (:requested c)))
+    (is (= 1 (:covered c)))
+    (is (= ["alexandria"] (:missing-municipalities c)))))
+
+(deftest by-topic-filters
+  (is (= ["cairo.law-187-2023-building-violations-reconciliation"]
+         (mapv :ordinance/id (facts/by-topic "cairo" :construction))))
+  (is (empty? (facts/by-topic "cairo" :labor)))
+  (is (empty? (facts/by-topic "alexandria" :construction))))
